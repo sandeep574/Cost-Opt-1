@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Brain, Download, Settings, BarChart3 } from "lucide-react";
+import { Brain, Download, BarChart3, FileText, Network } from "lucide-react";
+import { Link } from "wouter";
 import InputForm from "@/components/input-form";
-import WorkflowTab from "@/components/workflow-tab";
+import AgentArchitectureTab from "@/components/agent-architecture-tab";
 import CostAnalysisTab from "@/components/cost-analysis-tab";
 import ModelSelectionTab from "@/components/model-selection-tab";
 import { useOptimization } from "@/hooks/use-optimization";
@@ -28,26 +29,87 @@ export default function Dashboard() {
     await analyze(data);
   };
 
-  const handleExportReport = () => {
+  const handleExportPDF = async () => {
     if (analysis) {
-      const reportData = {
-        configuration: formData,
-        analysis,
-        timestamp: new Date().toISOString(),
-      };
+      const { default: jsPDF } = await import('jspdf');
+      const { default: autoTable } = await import('jspdf-autotable');
       
-      const blob = new Blob([JSON.stringify(reportData, null, 2)], {
-        type: 'application/json'
+      const doc = new jsPDF();
+      
+      // Header
+      doc.setFontSize(20);
+      doc.setTextColor(15, 98, 254); // IBM Blue
+      doc.text('AI Cost Optimization Report', 20, 30);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
+      
+      // Use Case Description
+      doc.setFontSize(16);
+      doc.text('Use Case Overview', 20, 65);
+      doc.setFontSize(11);
+      const splitDescription = doc.splitTextToSize(formData.userDescription, 170);
+      doc.text(splitDescription, 20, 75);
+      
+      let yPosition = 75 + (splitDescription.length * 6) + 15;
+      
+      // Cost Summary
+      doc.setFontSize(16);
+      doc.text('Cost Analysis Summary', 20, yPosition);
+      yPosition += 15;
+      
+      doc.setFontSize(11);
+      doc.text(`Total Monthly Cost: $${analysis.totalMonthlyCost.toLocaleString()}`, 20, yPosition);
+      doc.text(`Cost per Request: $${analysis.costPerRequest}`, 20, yPosition + 10);
+      doc.text(`Efficiency Score: ${analysis.efficiency}%`, 20, yPosition + 20);
+      
+      yPosition += 40;
+      
+      // Model Recommendations Table
+      doc.setFontSize(16);
+      doc.text('Recommended Models', 20, yPosition);
+      yPosition += 10;
+      
+      const modelData = analysis.models.map(model => [
+        model.name,
+        model.provider,
+        `$${model.costPer1K}`,
+        `${model.latency}ms`,
+        model.fitScore
+      ]);
+      
+      (doc as any).autoTable({
+        head: [['Model', 'Provider', 'Cost/1K', 'Latency', 'Fit Score']],
+        body: modelData,
+        startY: yPosition,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 98, 254] }
       });
       
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `ai-cost-optimization-report-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      yPosition = (doc as any).lastAutoTable.finalY + 20;
+      
+      // Cost Breakdown
+      doc.setFontSize(16);
+      doc.text('Cost Breakdown', 20, yPosition);
+      yPosition += 10;
+      
+      const costData = analysis.costBreakdown.map(item => [
+        item.component,
+        `$${item.cost.toLocaleString()}`,
+        `${item.percentage}%`
+      ]);
+      
+      (doc as any).autoTable({
+        head: [['Component', 'Cost', 'Percentage']],
+        body: costData,
+        startY: yPosition,
+        theme: 'striped',
+        headStyles: { fillColor: [15, 98, 254] }
+      });
+      
+      // Save the PDF
+      doc.save(`ai-cost-optimization-report-${new Date().toISOString().split('T')[0]}.pdf`);
     }
   };
 
@@ -69,23 +131,20 @@ export default function Dashboard() {
               </div>
             </div>
             <nav className="hidden md:flex space-x-6">
-              <a href="#" className="text-[hsl(var(--carbon-70))] hover:text-[hsl(var(--carbon-100))] text-sm font-medium">
+              <Link href="/" className="text-[hsl(var(--carbon-70))] hover:text-[hsl(var(--carbon-100))] text-sm font-medium">
                 Dashboard
-              </a>
-              <a href="#" className="text-[hsl(var(--carbon-70))] hover:text-[hsl(var(--carbon-100))] text-sm font-medium">
+              </Link>
+              <Link href="/analytics" className="text-[hsl(var(--carbon-70))] hover:text-[hsl(var(--carbon-100))] text-sm font-medium">
                 Analytics
-              </a>
-              <a href="#" className="text-[hsl(var(--carbon-70))] hover:text-[hsl(var(--carbon-100))] text-sm font-medium">
-                Settings
-              </a>
+              </Link>
             </nav>
             <Button 
-              onClick={handleExportReport}
+              onClick={handleExportPDF}
               disabled={!analysis}
               className="bg-[hsl(var(--ibm-blue-60))] text-white hover:bg-[hsl(var(--ibm-blue-70))]"
             >
-              <Download className="w-4 h-4 mr-2" />
-              Export Report
+              <FileText className="w-4 h-4 mr-2" />
+              Export PDF
             </Button>
           </div>
         </div>
@@ -105,14 +164,14 @@ export default function Dashboard() {
           {/* Main Content */}
           <div className="lg:col-span-2">
             <Card className="border-[hsl(var(--carbon-20))]">
-              <Tabs defaultValue="workflow" className="w-full">
+              <Tabs defaultValue="models" className="w-full">
                 <TabsList className="w-full grid grid-cols-3 bg-[hsl(var(--carbon-10))] border-b border-[hsl(var(--carbon-20))] rounded-t-lg rounded-b-none h-auto p-0">
                   <TabsTrigger 
-                    value="workflow" 
+                    value="models"
                     className="flex items-center justify-center px-6 py-4 text-sm font-medium data-[state=active]:bg-[hsl(var(--ibm-blue-50))] data-[state=active]:text-[hsl(var(--ibm-blue-60))] data-[state=active]:border-b-2 data-[state=active]:border-[hsl(var(--ibm-blue-60))] rounded-none"
                   >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Agent Workflow
+                    <Brain className="w-4 h-4 mr-2" />
+                    Model Selection
                   </TabsTrigger>
                   <TabsTrigger 
                     value="cost"
@@ -122,25 +181,25 @@ export default function Dashboard() {
                     Cost Analysis
                   </TabsTrigger>
                   <TabsTrigger 
-                    value="models"
+                    value="architecture" 
                     className="flex items-center justify-center px-6 py-4 text-sm font-medium data-[state=active]:bg-[hsl(var(--ibm-blue-50))] data-[state=active]:text-[hsl(var(--ibm-blue-60))] data-[state=active]:border-b-2 data-[state=active]:border-[hsl(var(--ibm-blue-60))] rounded-none"
                   >
-                    <Brain className="w-4 h-4 mr-2" />
-                    Model Selection
+                    <Network className="w-4 h-4 mr-2" />
+                    Agent Architecture
                   </TabsTrigger>
                 </TabsList>
 
                 <div className="p-6">
-                  <TabsContent value="workflow" className="mt-0">
-                    <WorkflowTab analysis={analysis} />
+                  <TabsContent value="models" className="mt-0">
+                    <ModelSelectionTab analysis={analysis} />
                   </TabsContent>
                   
                   <TabsContent value="cost" className="mt-0">
                     <CostAnalysisTab analysis={analysis} />
                   </TabsContent>
                   
-                  <TabsContent value="models" className="mt-0">
-                    <ModelSelectionTab analysis={analysis} />
+                  <TabsContent value="architecture" className="mt-0">
+                    <AgentArchitectureTab analysis={analysis} />
                   </TabsContent>
                 </div>
               </Tabs>
