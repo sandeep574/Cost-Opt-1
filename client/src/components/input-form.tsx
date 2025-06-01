@@ -86,8 +86,8 @@ export default function InputForm({ onSubmit, isLoading, initialData }: InputFor
               <Input
                 type="number"
                 placeholder="e.g., 1000"
-                value={formData.users || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, users: parseInt(e.target.value) || null }))}
+                value={formData.users ?? ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, users: parseInt(e.target.value) || undefined }))}
                 className="w-full"
               />
             </div>
@@ -99,8 +99,8 @@ export default function InputForm({ onSubmit, isLoading, initialData }: InputFor
               <Input
                 type="number"
                 placeholder="e.g., 10000"
-                value={formData.dailyRequests || ''}
-                onChange={(e) => setFormData(prev => ({ ...prev, dailyRequests: parseInt(e.target.value) || null }))}
+                value={formData.dailyRequests ?? ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, dailyRequests: parseInt(e.target.value) || undefined }))}
                 className="w-full"
               />
             </div>
@@ -137,7 +137,7 @@ export default function InputForm({ onSubmit, isLoading, initialData }: InputFor
                 Response Time
               </Label>
               <Select 
-                value={formData.responseTime || ''} 
+                value={formData.responseTime ?? ''} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, responseTime: value }))}
               >
                 <SelectTrigger className="w-full">
@@ -157,7 +157,7 @@ export default function InputForm({ onSubmit, isLoading, initialData }: InputFor
                 Budget Range
               </Label>
               <Select 
-                value={formData.budget || ''} 
+                value={formData.budget ?? ''} 
                 onValueChange={(value) => setFormData(prev => ({ ...prev, budget: value }))}
               >
                 <SelectTrigger className="w-full">
