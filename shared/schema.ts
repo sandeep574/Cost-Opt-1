@@ -4,19 +4,21 @@ import { z } from "zod";
 
 export const optimizationRequests = pgTable("optimization_requests", {
   id: serial("id").primaryKey(),
-  useCase: text("use_case").notNull(),
-  complexity: text("complexity").notNull(),
-  users: integer("users").notNull(),
-  dailyRequests: integer("daily_requests").notNull(),
-  responseTime: text("response_time").notNull(),
-  budget: text("budget").notNull(),
+  userDescription: text("user_description").notNull(),
+  useCaseType: text("use_case_type"),
+  complexity: text("complexity"),
+  users: integer("users"),
+  dailyRequests: integer("daily_requests"),
+  responseTime: text("response_time"),
+  budget: text("budget"),
   recommendations: json("recommendations"),
   costEstimate: json("cost_estimate"),
   modelRecommendations: json("model_recommendations"),
 });
 
 export const insertOptimizationRequestSchema = createInsertSchema(optimizationRequests).pick({
-  useCase: true,
+  userDescription: true,
+  useCaseType: true,
   complexity: true,
   users: true,
   dailyRequests: true,
