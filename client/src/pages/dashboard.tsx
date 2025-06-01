@@ -12,12 +12,13 @@ import type { InsertOptimizationRequest } from "@shared/schema";
 
 export default function Dashboard() {
   const [formData, setFormData] = useState<InsertOptimizationRequest>({
-    useCase: "",
-    complexity: "medium",
-    users: 1000,
-    dailyRequests: 10000,
-    responseTime: "standard",
-    budget: "medium",
+    userDescription: "",
+    useCaseType: undefined,
+    complexity: undefined,
+    users: undefined,
+    dailyRequests: undefined,
+    responseTime: undefined,
+    budget: undefined,
   });
 
   const { analysis, isAnalyzing, analyze } = useOptimization();
