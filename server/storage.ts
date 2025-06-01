@@ -84,15 +84,27 @@ export class MemStorage implements IStorage {
   private parseOptimizationFromLyzr(lyzrResponse: LyzrResponse, request: InsertOptimizationRequest): OptimizationResult {
     const responseText = lyzrResponse.response;
     
-    // Extract numerical values from the response using regex patterns
-    const costMatch = responseText.match(/\$?(\d+,?\d*\.?\d*)\s*(?:per month|monthly|\/month)/i);
-    const totalMonthlyCost = costMatch ? parseFloat(costMatch[1].replace(/,/g, '')) : 5000;
+    // Extract numerical values from the response using more comprehensive patterns
+    const costMatches = responseText.match(/\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:per month|monthly|\/month|month)/gi);
+    let totalMonthlyCost = 3000; // Base cost
+    if (costMatches && costMatches.length > 0) {
+      const cleanCost = costMatches[0].replace(/[^\d.]/g, '');
+      totalMonthlyCost = parseFloat(cleanCost) || 3000;
+    }
     
-    const perRequestMatch = responseText.match(/\$?(\d*\.?\d+)\s*(?:per request|\/request)/i);
-    const costPerRequest = perRequestMatch ? parseFloat(perRequestMatch[1]) : 0.025;
+    const perRequestMatches = responseText.match(/\$?(\d*\.?\d+)\s*(?:per request|\/request|per call)/gi);
+    let costPerRequest = totalMonthlyCost / 30000; // Estimate based on monthly cost
+    if (perRequestMatches && perRequestMatches.length > 0) {
+      const cleanPerRequest = perRequestMatches[0].replace(/[^\d.]/g, '');
+      costPerRequest = parseFloat(cleanPerRequest) || costPerRequest;
+    }
     
-    const efficiencyMatch = responseText.match(/(\d+)%?\s*(?:efficiency|efficient)/i);
-    const efficiency = efficiencyMatch ? parseInt(efficiencyMatch[1]) : 85;
+    const efficiencyMatches = responseText.match(/(\d+)%?\s*(?:efficiency|efficient|accuracy|performance)/gi);
+    let efficiency = 88;
+    if (efficiencyMatches && efficiencyMatches.length > 0) {
+      const cleanEfficiency = efficiencyMatches[0].replace(/[^\d]/g, '');
+      efficiency = parseInt(cleanEfficiency) || 88;
+    }
 
     // Extract model mentions
     const models = this.extractModelsFromResponse(responseText);
