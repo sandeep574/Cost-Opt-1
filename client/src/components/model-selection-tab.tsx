@@ -1,7 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Brain, CheckCircle, AlertCircle, Info } from "lucide-react";
 import type { OptimizationResult } from "@shared/schema";
 
 interface ModelSelectionTabProps {
@@ -13,11 +13,20 @@ export default function ModelSelectionTab({ analysis }: ModelSelectionTabProps) 
     return (
       <div className="text-center py-12">
         <div className="text-[hsl(var(--carbon-70))] mb-4">
-          Submit your use case configuration to see model recommendations
+          Submit your use case configuration to see AI-powered model recommendations
         </div>
       </div>
     );
   }
+
+  const getModelReasoning = (model: any) => {
+    const reasoningMap: { [key: string]: string } = {
+      'gpt4-turbo': 'Recommended for high-accuracy tasks requiring advanced reasoning and complex problem-solving capabilities. Best performance for your use case requirements.',
+      'claude3-sonnet': 'Excellent balance of performance and cost efficiency. Strong analytical capabilities with faster response times and lower costs.',
+      'llama3-70b': 'Cost-effective option for simpler tasks. Good performance for basic operations with significant cost savings.'
+    };
+    return reasoningMap[model.id] || 'Suitable model based on your specific requirements and constraints.';
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -40,98 +49,95 @@ export default function ModelSelectionTab({ analysis }: ModelSelectionTabProps) 
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-[hsl(var(--carbon-100))] mb-2">
-          LLM Model Recommendations
+        <h3 className="text-lg font-semibold text-[hsl(var(--carbon-100))] mb-2 flex items-center">
+          <Brain className="w-5 h-5 mr-2 text-[hsl(var(--ibm-blue-60))]" />
+          AI Model Recommendations & Reasoning
         </h3>
         <p className="text-sm text-[hsl(var(--carbon-70))]">
-          Optimized model selection based on your requirements
+          Intelligent model selection based on your specific use case analysis
         </p>
       </div>
 
-      {/* Model Comparison Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full border border-[hsl(var(--carbon-20))] rounded-lg">
-          <thead className="bg-[hsl(var(--carbon-10))]">
-            <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--carbon-70))] uppercase tracking-wider">
-                Model
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--carbon-70))] uppercase tracking-wider">
-                Performance
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--carbon-70))] uppercase tracking-wider">
-                Cost/1K Tokens
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--carbon-70))] uppercase tracking-wider">
-                Latency
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--carbon-70))] uppercase tracking-wider">
-                Fit Score
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-[hsl(var(--carbon-70))] uppercase tracking-wider">
-                Action
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-[hsl(var(--carbon-20))]">
-            {analysis.models.map((model) => (
-              <tr key={model.id} className="hover:bg-[hsl(var(--carbon-10))] transition-colors">
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div 
-                      className="w-2 h-2 rounded-full mr-3"
-                      style={{ backgroundColor: getStatusColor(model.status) }}
-                    />
-                    <div>
-                      <div className="text-sm font-medium text-[hsl(var(--carbon-100))]">
-                        {model.name}
-                      </div>
-                      <div className="text-xs text-[hsl(var(--carbon-70))]">
-                        {model.provider}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="w-16 bg-[hsl(var(--carbon-20))] rounded-full h-2 mr-2">
-                      <div 
-                        className="h-2 rounded-full"
-                        style={{ 
-                          width: `${model.performance}%`,
-                          backgroundColor: getStatusColor(model.status)
-                        }}
-                      />
-                    </div>
-                    <span className="text-xs text-[hsl(var(--carbon-70))]">
-                      {model.performance}%
-                    </span>
-                  </div>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-[hsl(var(--carbon-100))]">
+      {/* Model Cards with Reasoning */}
+      <div className="space-y-4">
+        {analysis.models.map((model, index) => (
+          <Card key={model.id} className={`p-6 ${
+            index === 0 ? 'border-[hsl(var(--status-success))] bg-[hsl(var(--status-success)/0.05)]' : 
+            'border-[hsl(var(--carbon-20))]'
+          }`}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className={`p-3 rounded-lg ${
+                  index === 0 ? 'bg-[hsl(var(--status-success))]' : 'bg-[hsl(var(--ibm-blue-60))]'
+                }`}>
+                  <Brain className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-[hsl(var(--carbon-100))] flex items-center">
+                    {model.name}
+                    {index === 0 && (
+                      <Badge className="ml-2 bg-[hsl(var(--status-success))] text-white">
+                        Recommended
+                      </Badge>
+                    )}
+                  </h4>
+                  <p className="text-sm text-[hsl(var(--carbon-70))]">{model.provider}</p>
+                </div>
+              </div>
+              <Badge className={getFitScoreBadge(model.fitScore)}>
+                {model.fitScore.charAt(0).toUpperCase() + model.fitScore.slice(1)} Fit
+              </Badge>
+            </div>
+
+            {/* Reasoning Section */}
+            <div className="mb-4 p-4 bg-[hsl(var(--carbon-10))] rounded-lg">
+              <div className="flex items-start space-x-2">
+                <Info className="w-4 h-4 text-[hsl(var(--ibm-blue-60))] mt-0.5 flex-shrink-0" />
+                <div>
+                  <h5 className="text-sm font-medium text-[hsl(var(--carbon-100))] mb-1">
+                    Why this model?
+                  </h5>
+                  <p className="text-sm text-[hsl(var(--carbon-70))] leading-relaxed">
+                    {getModelReasoning(model)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Model Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-white rounded-lg border border-[hsl(var(--carbon-20))]">
+                <div className="text-lg font-bold text-[hsl(var(--carbon-100))]">
+                  {model.performance}%
+                </div>
+                <div className="text-xs text-[hsl(var(--carbon-70))]">Performance</div>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-[hsl(var(--carbon-20))]">
+                <div className="text-lg font-bold text-[hsl(var(--carbon-100))]">
                   ${model.costPer1K.toFixed(3)}
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap text-sm text-[hsl(var(--carbon-100))]">
+                </div>
+                <div className="text-xs text-[hsl(var(--carbon-70))]">Cost/1K Tokens</div>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-[hsl(var(--carbon-20))]">
+                <div className="text-lg font-bold text-[hsl(var(--carbon-100))]">
                   {model.latency}ms
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <Badge className={getFitScoreBadge(model.fitScore)}>
-                    {model.fitScore.charAt(0).toUpperCase() + model.fitScore.slice(1)}
-                  </Badge>
-                </td>
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <Button 
-                    variant="link" 
-                    size="sm"
-                    className="text-[hsl(var(--ibm-blue-60))] hover:text-[hsl(var(--ibm-blue-70))] p-0"
-                  >
-                    Select
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </div>
+                <div className="text-xs text-[hsl(var(--carbon-70))]">Latency</div>
+              </div>
+              <div className="text-center p-3 bg-white rounded-lg border border-[hsl(var(--carbon-20))]">
+                <div className={`text-lg font-bold ${
+                  model.fitScore === 'excellent' ? 'text-[hsl(var(--status-success))]' :
+                  model.fitScore === 'good' ? 'text-[hsl(var(--status-warning))]' :
+                  'text-[hsl(var(--status-error))]'
+                }`}>
+                  {model.fitScore === 'excellent' ? 'A+' : 
+                   model.fitScore === 'good' ? 'B+' : 'C+'}
+                </div>
+                <div className="text-xs text-[hsl(var(--carbon-70))]">Fit Grade</div>
+              </div>
+            </div>
+          </Card>
+        ))}
       </div>
 
       {/* Hybrid Model Strategy */}
