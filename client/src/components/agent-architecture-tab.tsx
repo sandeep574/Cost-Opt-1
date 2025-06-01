@@ -57,158 +57,118 @@ export default function AgentArchitectureTab({ analysis }: AgentArchitectureTabP
         </p>
       </div>
 
-      {/* Agent Importance Ranking */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {analysis.agents.slice(0, 3).map((agent, index) => (
-          <div key={agent.id} className="relative">
-            <div className={`
-              bg-white rounded-xl p-6 shadow-lg border-2 transition-all duration-300 hover:shadow-xl
-              ${index === 0 ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50' :
-                index === 1 ? 'border-gray-400 bg-gradient-to-br from-gray-50 to-slate-50' :
-                'border-amber-600 bg-gradient-to-br from-amber-50 to-yellow-50'}
-            `}>
-              {/* Importance Badge */}
-              <div className="absolute -top-3 -right-3">
-                <div className={`
-                  w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
-                  ${index === 0 ? 'bg-yellow-500' :
-                    index === 1 ? 'bg-gray-500' :
-                    'bg-amber-600'}
-                `}>
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                </div>
+      {/* Agent Design Flow Diagram */}
+      <div className="bg-gray-50 rounded-xl p-8 min-h-[600px]">
+        <div className="flex flex-col items-center">
+          
+          {/* Manager Agent (Top Level) */}
+          {analysis.agents.length > 0 && (
+            <div className="mb-8">
+              <div className="bg-orange-400 rounded-2xl p-6 min-w-[300px] border-4 border-black shadow-lg">
+                <h3 className="text-xl font-bold text-black text-center">{analysis.agents[0].name}</h3>
+                <p className="text-black text-center text-sm mt-2">{analysis.agents[0].description}</p>
               </div>
               
-              <div className="flex items-center space-x-4 mb-4">
-                <div className={`
-                  p-4 rounded-xl
-                  ${index === 0 ? 'bg-yellow-100' :
-                    index === 1 ? 'bg-gray-100' :
-                    'bg-amber-100'}
-                `}>
-                  <div className={`
-                    text-2xl
-                    ${index === 0 ? 'text-yellow-600' :
-                      index === 1 ? 'text-gray-600' :
-                      'text-amber-600'}
-                  `}>
-                    {getAgentIcon(agent.id)}
+              {/* Arrow Down */}
+              <div className="flex justify-center mt-4">
+                <div className="w-1 h-12 bg-orange-400"></div>
+                <div className="absolute mt-8 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-orange-400"></div>
+              </div>
+            </div>
+          )}
+
+          {/* Middle Layer Agents */}
+          {analysis.agents.length > 1 && (
+            <div className="mb-8">
+              <div className="flex justify-center items-center space-x-8 mb-4">
+                {analysis.agents.slice(1, 4).map((agent, index) => (
+                  <div key={agent.id} className="relative">
+                    <div className="bg-teal-400 rounded-2xl p-6 w-48 border-4 border-black shadow-lg">
+                      <h4 className="text-lg font-bold text-black text-center">{agent.name.replace(' Agent', '')}</h4>
+                      <p className="text-black text-center text-xs mt-2 leading-tight">{agent.description}</p>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-800">{agent.name}</h3>
-                  <p className="text-sm text-slate-600">{agent.description}</p>
-                </div>
+                ))}
               </div>
               
-              <div className="flex justify-between items-center">
-                <div className="text-sm">
-                  <span className="font-medium text-slate-700">Cost: </span>
-                  <span className="text-blue-600 font-semibold">${agent.cost.toFixed(4)}/req</span>
+              {/* Connecting Lines */}
+              <div className="relative">
+                <div className="flex justify-center">
+                  <div className="w-96 h-1 bg-teal-400"></div>
                 </div>
-                <div className={`
-                  px-3 py-1 rounded-full text-xs font-medium
+                <div className="flex justify-center mt-2">
+                  <div className="w-1 h-12 bg-teal-400"></div>
+                  <div className="absolute mt-8 w-0 h-0 border-l-8 border-l-transparent border-r-8 border-r-transparent border-t-8 border-t-teal-400"></div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Bottom Layer - Interface/Output */}
+          {analysis.agents.length > 4 ? (
+            <div className="bg-teal-400 rounded-2xl p-6 min-w-[350px] border-4 border-black shadow-lg">
+              <h4 className="text-lg font-bold text-black text-center">{analysis.agents[analysis.agents.length - 1].name}</h4>
+              <p className="text-black text-center text-sm mt-2">{analysis.agents[analysis.agents.length - 1].description}</p>
+            </div>
+          ) : (
+            <div className="bg-teal-400 rounded-2xl p-6 min-w-[350px] border-4 border-black shadow-lg">
+              <h4 className="text-lg font-bold text-black text-center">User Interface Module</h4>
+              <p className="text-black text-center text-sm mt-2">Ensures client-friendly interaction and response delivery</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Agent Details List */}
+      <div className="mt-6">
+        <h4 className="text-lg font-semibold text-gray-800 mb-4">Agent Details</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {analysis.agents.map((agent, index) => (
+            <div key={agent.id} className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <h5 className="font-semibold text-gray-800">{agent.name}</h5>
+                <span className={`
+                  px-2 py-1 rounded text-xs font-medium
                   ${agent.status === 'success' ? 'bg-green-100 text-green-800' :
                     agent.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-blue-100 text-blue-800'}
                 `}>
                   {agent.status}
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Agent Flow Diagram */}
-      <div className="relative bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-8 min-h-[400px] border border-slate-200">
-        {/* Flow Direction Indicator */}
-        <div className="absolute top-4 left-4 flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-200">
-          <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-          <span className="text-sm font-medium text-slate-700">Data Flow</span>
-        </div>
-
-        {/* Agent Flow */}
-        <div className="flex justify-center items-center h-full">
-          <div className="flex items-center space-x-6">
-            {analysis.agents.map((agent, index) => (
-              <div key={agent.id} className="flex items-center">
-                {/* Agent Node */}
-                <div className="relative group">
-                  <div className={`
-                    w-24 h-24 rounded-xl shadow-lg bg-white border-2 transition-all duration-300 
-                    hover:scale-110 hover:shadow-xl cursor-pointer
-                    ${agent.status === 'success' ? 'border-green-400' : 
-                      agent.status === 'warning' ? 'border-yellow-400' : 
-                      'border-blue-400'}
-                  `}>
-                    <div className="flex flex-col items-center justify-center h-full p-2">
-                      <div className={`
-                        p-2 rounded-lg mb-1
-                        ${agent.status === 'success' ? 'bg-green-100 text-green-600' : 
-                          agent.status === 'warning' ? 'bg-yellow-100 text-yellow-600' : 
-                          'bg-blue-100 text-blue-600'}
-                      `}>
-                        {getAgentIcon(agent.id)}
-                      </div>
-                      <span className="text-xs font-semibold text-slate-800 text-center leading-tight">
-                        {agent.name.split(' ')[0]}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  {/* Tooltip */}
-                  <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs rounded-lg px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
-                    {agent.description}
-                  </div>
-                </div>
-
-                {/* Arrow */}
-                {index < analysis.agents.length - 1 && (
-                  <div className="flex items-center mx-2">
-                    <div className="w-6 h-0.5 bg-gradient-to-r from-blue-400 to-blue-600 relative">
-                      <div className="absolute -right-1 -top-1 w-0 h-0 border-l-3 border-l-blue-600 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Performance Dashboard */}
-        <div className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200 min-w-[200px]">
-          <div className="flex items-center mb-3">
-            <Zap className="w-5 h-5 mr-2 text-green-500" />
-            <h4 className="font-semibold text-slate-800">Performance</h4>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Latency</span>
-              <div className="flex items-center">
-                <div className="w-16 h-2 bg-slate-200 rounded-full mr-2">
-                  <div 
-                    className="h-2 bg-green-500 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.max(10, 100 - (analysis.performance.latency / 10))}%` }}
-                  ></div>
-                </div>
-                <span className="text-sm font-medium text-slate-800">
-                  {analysis.performance.latency}ms
                 </span>
               </div>
+              <p className="text-sm text-gray-600 mb-2">{agent.description}</p>
+              <div className="text-sm font-medium text-blue-600">
+                Cost: ${agent.cost.toFixed(4)}/request
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Throughput</span>
-              <span className="text-sm font-medium text-slate-800">
-                {analysis.performance.throughput} req/s
-              </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Performance Metrics */}
+      <div className="mt-6 bg-white rounded-xl p-6 border border-gray-200">
+        <div className="flex items-center mb-4">
+          <Zap className="w-5 h-5 mr-2 text-green-500" />
+          <h4 className="font-semibold text-gray-800">Performance Metrics</h4>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <div className="text-2xl font-bold text-green-600">
+              {analysis.performance.latency}ms
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-slate-600">Accuracy</span>
-              <span className="text-sm font-medium text-green-600">
-                {analysis.performance.accuracy}%
-              </span>
+            <div className="text-sm text-gray-600">Latency</div>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <div className="text-2xl font-bold text-blue-600">
+              {analysis.performance.throughput}
             </div>
+            <div className="text-sm text-gray-600">Req/sec</div>
+          </div>
+          <div className="text-center p-4 bg-gray-50 rounded-lg">
+            <div className="text-2xl font-bold text-green-600">
+              {analysis.performance.accuracy}%
+            </div>
+            <div className="text-sm text-gray-600">Accuracy</div>
           </div>
         </div>
       </div>
