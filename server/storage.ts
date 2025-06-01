@@ -83,28 +83,127 @@ export class MemStorage implements IStorage {
 
   private parseOptimizationFromLyzr(lyzrResponse: LyzrResponse, request: InsertOptimizationRequest): OptimizationResult {
     const responseText = lyzrResponse.response;
+    console.log('Raw Lyzr Response:', responseText); // Debug log
     
-    // Extract numerical values from the response using more comprehensive patterns
-    const costMatches = responseText.match(/\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:per month|monthly|\/month|month)/gi);
-    let totalMonthlyCost = 3000; // Base cost
-    if (costMatches && costMatches.length > 0) {
-      const cleanCost = costMatches[0].replace(/[^\d.]/g, '');
-      totalMonthlyCost = parseFloat(cleanCost) || 3000;
+    // More aggressive parsing patterns for cost extraction
+    let totalMonthlyCost = 0;
+    let costPerRequest = 0;
+    let efficiency = 0;
+    
+    // Try multiple patterns for monthly cost
+    const monthlyPatterns = [
+      /\$?(\d+(?:,\d{3})*(?:\.\d{2})?)\s*(?:per month|monthly|\/month|\/mo|month)/gi,
+      /monthly.*?\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+      /cost.*?\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+      /budget.*?\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi,
+      /price.*?\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi
+    ];
+    
+    for (const pattern of monthlyPatterns) {
+      const matches = responseText.match(pattern);
+      if (matches && matches.length > 0) {
+        const numbers = matches[0].match(/(\d+(?:,\d{3})*(?:\.\d{2})?)/g);
+        if (numbers) {
+          const cost = parseFloat(numbers[0].replace(/,/g, ''));
+          if (cost > totalMonthlyCost && cost < 1000000) { // Reasonable range
+            totalMonthlyCost = cost;
+          }
+        }
+      }
     }
     
-    const perRequestMatches = responseText.match(/\$?(\d*\.?\d+)\s*(?:per request|\/request|per call)/gi);
-    let costPerRequest = totalMonthlyCost / 30000; // Estimate based on monthly cost
-    if (perRequestMatches && perRequestMatches.length > 0) {
-      const cleanPerRequest = perRequestMatches[0].replace(/[^\d.]/g, '');
-      costPerRequest = parseFloat(cleanPerRequest) || costPerRequest;
+    // Try patterns for per-request cost
+    const requestPatterns = [
+      /\$?(\d*\.?\d+)\s*(?:per request|\/request|per call|\/call)/gi,
+      /request.*?\$?(\d*\.?\d+)/gi,
+      /call.*?\$?(\d*\.?\d+)/gi
+    ];
+    
+    for (const pattern of requestPatterns) {
+      const matches = responseText.match(pattern);
+      if (matches && matches.length > 0) {
+        const numbers = matches[0].match(/(\d*\.?\d+)/g);
+        if (numbers) {
+          const cost = parseFloat(numbers[0]);
+          if (cost > 0 && cost < 10) { // Reasonable range for per-request
+            costPerRequest = cost;
+          }
+        }
+      }
     }
     
-    const efficiencyMatches = responseText.match(/(\d+)%?\s*(?:efficiency|efficient|accuracy|performance)/gi);
-    let efficiency = 88;
-    if (efficiencyMatches && efficiencyMatches.length > 0) {
-      const cleanEfficiency = efficiencyMatches[0].replace(/[^\d]/g, '');
-      efficiency = parseInt(cleanEfficiency) || 88;
+    // Try patterns for efficiency/performance
+    const efficiencyPatterns = [
+      /(\d+)%?\s*(?:efficiency|efficient|accuracy|performance|optimization)/gi,
+      /(?:efficiency|efficient|accuracy|performance).*?(\d+)%?/gi
+    ];
+    
+    for (const pattern of efficiencyPatterns) {
+      const matches = responseText.match(pattern);
+      if (matches && matches.length > 0) {
+        const numbers = matches[0].match(/(\d+)/g);
+        if (numbers) {
+          const eff = parseInt(numbers[0]);
+          if (eff > 0 && eff <= 100) {
+            efficiency = eff;
+          }
+        }
+      }
     }
+    
+    // Fallback calculation if no explicit per-request cost found
+    if (costPerRequest === 0 && totalMonthlyCost > 0) {
+      costPerRequest = totalMonthlyCost / (request.dailyRequests || 10000) / 30;
+    }
+    
+    // Extract ALL numerical values from the response for analysis
+    const allNumbers = responseText.match(/\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/g) || [];
+    console.log('All numbers found in response:', allNumbers);
+    
+    // Use extracted values - prioritize any found data over defaults
+    if (totalMonthlyCost === 0) {
+      // Look for any large numbers that could be monthly costs
+      const largeNumbers = allNumbers
+        .map(n => parseFloat(n.replace(/[^\d.]/g, '')))
+        .filter(n => n >= 1000 && n <= 500000);
+      
+      if (largeNumbers.length > 0) {
+        totalMonthlyCost = Math.max(...largeNumbers);
+      } else {
+        // Absolute fallback only if no data found
+        const baseDaily = request.dailyRequests || 1000;
+        const complexity = request.complexity === 'high' ? 1.5 : request.complexity === 'low' ? 0.7 : 1.0;
+        totalMonthlyCost = Math.round(baseDaily * 0.01 * complexity * 30);
+      }
+    }
+    
+    if (efficiency === 0) {
+      // Look for percentage values
+      const percentages = allNumbers
+        .map(n => parseFloat(n.replace(/[^\d.]/g, '')))
+        .filter(n => n > 50 && n <= 100);
+      
+      if (percentages.length > 0) {
+        efficiency = Math.max(...percentages);
+      } else {
+        efficiency = 85;
+      }
+    }
+    
+    if (costPerRequest === 0) {
+      // Look for small decimal numbers
+      const smallNumbers = allNumbers
+        .map(n => parseFloat(n.replace(/[^\d.]/g, '')))
+        .filter(n => n > 0 && n < 10);
+      
+      if (smallNumbers.length > 0) {
+        costPerRequest = Math.min(...smallNumbers);
+      } else {
+        costPerRequest = totalMonthlyCost / ((request.dailyRequests || 10000) * 30);
+      }
+    }
+    
+    console.log('Final extracted values:', { totalMonthlyCost, costPerRequest, efficiency });
 
     // Extract model mentions
     const models = this.extractModelsFromResponse(responseText);
@@ -299,33 +398,77 @@ export class MemStorage implements IStorage {
     return baseCosts[agentId] || 0.005;
   }
 
+  private estimateCostFromRequest(request: InsertOptimizationRequest): number {
+    // Only use this as absolute fallback - prefer extracted data
+    const baseDaily = request.dailyRequests || 1000;
+    const complexity = request.complexity === 'high' ? 1.5 : request.complexity === 'low' ? 0.7 : 1.0;
+    return Math.round(baseDaily * 0.01 * complexity * 30);
+  }
+
   private generateCostBreakdownFromResponse(responseText: string, totalCost: number): CostBreakdown[] {
-    return [
-      {
-        component: 'LLM Processing',
-        cost: Math.round(totalCost * 0.7),
-        percentage: 70,
-        color: '#0F62FE'
-      },
-      {
-        component: 'Infrastructure',
-        cost: Math.round(totalCost * 0.18),
-        percentage: 18,
-        color: '#42BE65'
-      },
-      {
-        component: 'Data Processing',
-        cost: Math.round(totalCost * 0.08),
-        percentage: 8,
-        color: '#FF832B'
-      },
-      {
-        component: 'Monitoring',
-        cost: Math.round(totalCost * 0.04),
-        percentage: 4,
-        color: '#8A3FFC'
-      }
+    // Extract specific cost components from the Lyzr agent response
+    const breakdown = [];
+    const colors = ['#0F62FE', '#42BE65', '#FF832B', '#8A3FFC', '#10B981', '#8B5CF6'];
+    
+    // Look for cost breakdown patterns in the response
+    const componentPatterns = [
+      { name: "Model Inference", patterns: [/model.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi, /inference.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi] },
+      { name: "API Operations", patterns: [/api.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi, /endpoint.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi] },
+      { name: "Infrastructure", patterns: [/infrastructure.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi, /server.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi] },
+      { name: "Computing", patterns: [/compute.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi, /processing.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi] },
+      { name: "Storage", patterns: [/storage.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi, /database.*?(\$?\d+(?:,\d{3})*(?:\.\d{2})?)/gi] }
     ];
+    
+    let totalExtracted = 0;
+    let colorIndex = 0;
+    
+    // Try to extract cost components from response
+    for (const component of componentPatterns) {
+      for (const pattern of component.patterns) {
+        const matches = responseText.match(pattern);
+        if (matches && matches.length > 0) {
+          const costMatch = matches[0].match(/(\d+(?:,\d{3})*(?:\.\d{2})?)/);
+          if (costMatch) {
+            const cost = parseFloat(costMatch[0].replace(/,/g, ''));
+            if (cost > 0 && cost <= totalCost && !breakdown.find(b => b.component === component.name)) {
+              const percentage = Math.round((cost / totalCost) * 100);
+              breakdown.push({
+                component: component.name,
+                cost: Math.round(cost),
+                percentage,
+                color: colors[colorIndex % colors.length]
+              });
+              totalExtracted += cost;
+              colorIndex++;
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // If we found some components but not complete breakdown, add remainder
+    if (breakdown.length > 0 && totalExtracted < totalCost * 0.9) {
+      const remaining = totalCost - totalExtracted;
+      const remainingPercentage = Math.round((remaining / totalCost) * 100);
+      if (remainingPercentage > 0) {
+        breakdown.push({
+          component: "Other Operations",
+          cost: Math.round(remaining),
+          percentage: remainingPercentage,
+          color: colors[colorIndex % colors.length]
+        });
+      }
+    }
+    
+    // If no specific breakdown was extracted from response, return empty array
+    // This forces the system to show that no cost breakdown data was available from the agent
+    if (breakdown.length === 0) {
+      console.log('No cost breakdown data extracted from Lyzr agent response');
+      return [];
+    }
+    
+    return breakdown;
   }
 
   private extractRecommendationsFromResponse(responseText: string): WorkflowRecommendation[] {
