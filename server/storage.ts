@@ -212,58 +212,91 @@ export class MemStorage implements IStorage {
   }
 
   private extractAgentsFromResponse(responseText: string): AgentNode[] {
-    const agents: AgentNode[] = [
-      {
-        id: 'input',
-        name: 'Input Processing',
-        description: 'Request validation & preprocessing',
-        cost: 0.002,
-        status: 'success',
-        position: { x: 50, y: 50 }
-      },
-      {
-        id: 'analysis',
-        name: 'AI Analysis',
-        description: 'Core AI model processing',
-        cost: 0.015,
-        status: 'success',
-        position: { x: 300, y: 50 }
-      },
-      {
-        id: 'output',
-        name: 'Output Generation',
-        description: 'Response formatting & delivery',
-        cost: 0.001,
-        status: 'success',
-        position: { x: 550, y: 50 }
-      }
+    const agents: AgentNode[] = [];
+    
+    // Look for agent mentions in the response
+    const agentPatterns = [
+      { pattern: /input|preprocessing|validation/i, name: 'Input Agent', id: 'input' },
+      { pattern: /analysis|processing|reasoning|llm|model/i, name: 'Analysis Agent', id: 'analysis' },
+      { pattern: /output|response|formatting|generation/i, name: 'Output Agent', id: 'output' },
+      { pattern: /memory|cache|storage|context/i, name: 'Memory Agent', id: 'memory' },
+      { pattern: /orchestrat|coordinat|workflow|routing/i, name: 'Orchestrator', id: 'orchestrator' },
+      { pattern: /monitor|log|track|observ/i, name: 'Monitoring Agent', id: 'monitoring' },
+      { pattern: /secur|auth|valid|permission/i, name: 'Security Agent', id: 'security' }
     ];
 
-    // Add memory agent if caching is mentioned
-    if (responseText.toLowerCase().includes('cache') || responseText.toLowerCase().includes('memory')) {
-      agents.push({
-        id: 'memory',
-        name: 'Memory Agent',
-        description: 'Context & caching optimization',
-        cost: 0.0005,
-        status: 'active',
-        position: { x: 300, y: 200 }
-      });
+    // Find which agents are mentioned
+    agentPatterns.forEach((pattern, index) => {
+      if (pattern.pattern.test(responseText)) {
+        agents.push({
+          id: pattern.id,
+          name: pattern.name,
+          description: this.getAgentDescription(pattern.id, responseText),
+          cost: this.calculateAgentCost(pattern.id, responseText),
+          status: index < 3 ? 'success' : 'active',
+          position: { x: 50 + (index * 120), y: 50 }
+        });
+      }
+    });
+
+    // Ensure we have at least 3 core agents
+    if (agents.length < 3) {
+      const coreAgents = [
+        {
+          id: 'input',
+          name: 'Input Processing',
+          description: 'Request validation & preprocessing',
+          cost: 0.002,
+          status: 'success' as const,
+          position: { x: 50, y: 50 }
+        },
+        {
+          id: 'analysis',
+          name: 'AI Analysis',
+          description: 'Core AI model processing',
+          cost: 0.015,
+          status: 'success' as const,
+          position: { x: 200, y: 50 }
+        },
+        {
+          id: 'output',
+          name: 'Output Generation',
+          description: 'Response formatting & delivery',
+          cost: 0.001,
+          status: 'success' as const,
+          position: { x: 350, y: 50 }
+        }
+      ];
+      return coreAgents;
     }
 
-    // Add orchestrator if workflow coordination is mentioned
-    if (responseText.toLowerCase().includes('orchestrat') || responseText.toLowerCase().includes('workflow')) {
-      agents.push({
-        id: 'orchestrator',
-        name: 'Workflow Orchestrator',
-        description: 'Multi-agent coordination',
-        cost: 0.003,
-        status: 'warning',
-        position: { x: 400, y: 150 }
-      });
-    }
+    return agents.slice(0, 7); // Limit to 7 agents for better visualization
+  }
 
-    return agents;
+  private getAgentDescription(agentId: string, responseText: string): string {
+    const descriptions: { [key: string]: string } = {
+      'input': 'Handles request validation and preprocessing',
+      'analysis': 'Performs core AI analysis and reasoning',
+      'output': 'Formats and delivers responses',
+      'memory': 'Manages context and caching',
+      'orchestrator': 'Coordinates multi-agent workflows',
+      'monitoring': 'Tracks performance and metrics',
+      'security': 'Ensures data security and validation'
+    };
+    return descriptions[agentId] || 'Specialized processing agent';
+  }
+
+  private calculateAgentCost(agentId: string, responseText: string): number {
+    const baseCosts: { [key: string]: number } = {
+      'input': 0.002,
+      'analysis': 0.015,
+      'output': 0.001,
+      'memory': 0.0005,
+      'orchestrator': 0.003,
+      'monitoring': 0.0008,
+      'security': 0.0012
+    };
+    return baseCosts[agentId] || 0.005;
   }
 
   private generateCostBreakdownFromResponse(responseText: string, totalCost: number): CostBreakdown[] {
