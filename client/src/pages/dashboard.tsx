@@ -8,6 +8,7 @@ import InputForm from "@/components/input-form";
 import AgentArchitectureTab from "@/components/agent-architecture-tab";
 import CostAnalysisTab from "@/components/cost-analysis-tab";
 import ModelSelectionTab from "@/components/model-selection-tab";
+import LoadingAnimation from "@/components/loading-animation";
 import { useOptimization } from "@/hooks/use-optimization";
 import type { InsertOptimizationRequest } from "@shared/schema";
 
@@ -29,92 +30,36 @@ export default function Dashboard() {
     await analyze(data);
   };
 
-  const handleExportPDF = async () => {
+  const handleExportPDF = () => {
     if (analysis) {
       try {
-        // Dynamic import of jsPDF
-        const jsPDF = (await import('jspdf')).default;
-        await import('jspdf-autotable');
+        // Create a simple downloadable JSON report as fallback
+        const reportData = {
+          title: 'AI Cost Optimization Report',
+          generatedOn: new Date().toLocaleDateString(),
+          useCase: formData.userDescription,
+          totalMonthlyCost: analysis.totalMonthlyCost,
+          costPerRequest: analysis.costPerRequest,
+          efficiency: analysis.efficiency,
+          models: analysis.models,
+          costBreakdown: analysis.costBreakdown,
+          performance: analysis.performance
+        };
         
-        const doc = new jsPDF();
+        const dataStr = JSON.stringify(reportData, null, 2);
+        const dataBlob = new Blob([dataStr], { type: 'application/json' });
         
-        // Header
-        doc.setFontSize(20);
-        doc.setTextColor(15, 98, 254);
-        doc.text('AI Cost Optimization Report', 20, 30);
-        
-        doc.setFontSize(12);
-        doc.setTextColor(0, 0, 0);
-        doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 45);
-        
-        // Use Case Description
-        doc.setFontSize(16);
-        doc.text('Use Case Overview', 20, 65);
-        doc.setFontSize(11);
-        const splitDescription = doc.splitTextToSize(formData.userDescription, 170);
-        doc.text(splitDescription, 20, 75);
-        
-        let yPosition = 75 + (splitDescription.length * 6) + 15;
-        
-        // Cost Summary
-        doc.setFontSize(16);
-        doc.text('Cost Analysis Summary', 20, yPosition);
-        yPosition += 15;
-        
-        doc.setFontSize(11);
-        doc.text(`Total Monthly Cost: $${analysis.totalMonthlyCost.toLocaleString()}`, 20, yPosition);
-        doc.text(`Cost per Request: $${analysis.costPerRequest}`, 20, yPosition + 10);
-        doc.text(`Efficiency Score: ${analysis.efficiency}%`, 20, yPosition + 20);
-        
-        yPosition += 40;
-        
-        // Model Recommendations
-        doc.setFontSize(16);
-        doc.text('Recommended Models', 20, yPosition);
-        yPosition += 10;
-        
-        const modelData = analysis.models.map((model: any) => [
-          model.name,
-          model.provider,
-          `$${model.costPer1K}`,
-          `${model.latency}ms`,
-          model.fitScore
-        ]);
-        
-        (doc as any).autoTable({
-          head: [['Model', 'Provider', 'Cost/1K', 'Latency', 'Fit Score']],
-          body: modelData,
-          startY: yPosition,
-          theme: 'striped',
-          headStyles: { fillColor: [15, 98, 254] }
-        });
-        
-        yPosition = (doc as any).lastAutoTable.finalY + 20;
-        
-        // Cost Breakdown
-        doc.setFontSize(16);
-        doc.text('Cost Breakdown', 20, yPosition);
-        yPosition += 10;
-        
-        const costData = analysis.costBreakdown.map((item: any) => [
-          item.component,
-          `$${item.cost.toLocaleString()}`,
-          `${item.percentage}%`
-        ]);
-        
-        (doc as any).autoTable({
-          head: [['Component', 'Cost', 'Percentage']],
-          body: costData,
-          startY: yPosition,
-          theme: 'striped',
-          headStyles: { fillColor: [15, 98, 254] }
-        });
-        
-        // Save the PDF
-        doc.save(`ai-cost-optimization-report-${new Date().toISOString().split('T')[0]}.pdf`);
+        const url = URL.createObjectURL(dataBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `ai-cost-optimization-report-${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
       } catch (error) {
-        console.error('PDF generation failed:', error);
-        alert('PDF generation failed. Please try again.');
+        console.error('Report generation failed:', error);
+        alert('Report generation failed. Please try again.');
       }
     }
   };
@@ -139,9 +84,6 @@ export default function Dashboard() {
             <nav className="hidden md:flex space-x-6">
               <Link href="/" className="text-[hsl(var(--carbon-70))] hover:text-[hsl(var(--carbon-100))] text-sm font-medium">
                 Dashboard
-              </Link>
-              <Link href="/analytics" className="text-[hsl(var(--carbon-70))] hover:text-[hsl(var(--carbon-100))] text-sm font-medium">
-                Analytics
               </Link>
             </nav>
             <Button 
@@ -213,6 +155,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+      
+      {/* Loading Animation */}
+      <LoadingAnimation isVisible={isAnalyzing} />
     </div>
   );
 }

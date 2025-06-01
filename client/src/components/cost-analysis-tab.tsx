@@ -36,9 +36,8 @@ export default function CostAnalysisTab({ analysis }: CostAnalysisTabProps) {
             ${analysis.totalMonthlyCost.toLocaleString()}
           </div>
           <div className="text-sm opacity-90">Monthly Total</div>
-          <div className="text-xs opacity-75 mt-1 flex items-center">
-            <TrendingUp className="w-3 h-3 mr-1" />
-            15% vs last month
+          <div className="text-xs opacity-75 mt-1">
+            Based on current usage
           </div>
         </div>
         
@@ -47,9 +46,8 @@ export default function CostAnalysisTab({ analysis }: CostAnalysisTabProps) {
             ${analysis.costPerRequest.toFixed(4)}
           </div>
           <div className="text-sm opacity-90">Cost per Request</div>
-          <div className="text-xs opacity-75 mt-1 flex items-center">
-            <TrendingDown className="w-3 h-3 mr-1" />
-            8% optimization
+          <div className="text-xs opacity-75 mt-1">
+            Per request pricing
           </div>
         </div>
         
