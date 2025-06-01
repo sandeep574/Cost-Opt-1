@@ -31,85 +31,91 @@ export default function Dashboard() {
 
   const handleExportPDF = async () => {
     if (analysis) {
-      const { default: jsPDF } = await import('jspdf');
-      const { default: autoTable } = await import('jspdf-autotable');
-      
-      const doc = new jsPDF();
-      
-      // Header
-      doc.setFontSize(20);
-      doc.setTextColor(15, 98, 254); // IBM Blue
-      doc.text('AI Cost Optimization Report', 20, 30);
-      
-      doc.setFontSize(12);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
-      
-      // Use Case Description
-      doc.setFontSize(16);
-      doc.text('Use Case Overview', 20, 65);
-      doc.setFontSize(11);
-      const splitDescription = doc.splitTextToSize(formData.userDescription, 170);
-      doc.text(splitDescription, 20, 75);
-      
-      let yPosition = 75 + (splitDescription.length * 6) + 15;
-      
-      // Cost Summary
-      doc.setFontSize(16);
-      doc.text('Cost Analysis Summary', 20, yPosition);
-      yPosition += 15;
-      
-      doc.setFontSize(11);
-      doc.text(`Total Monthly Cost: $${analysis.totalMonthlyCost.toLocaleString()}`, 20, yPosition);
-      doc.text(`Cost per Request: $${analysis.costPerRequest}`, 20, yPosition + 10);
-      doc.text(`Efficiency Score: ${analysis.efficiency}%`, 20, yPosition + 20);
-      
-      yPosition += 40;
-      
-      // Model Recommendations Table
-      doc.setFontSize(16);
-      doc.text('Recommended Models', 20, yPosition);
-      yPosition += 10;
-      
-      const modelData = analysis.models.map(model => [
-        model.name,
-        model.provider,
-        `$${model.costPer1K}`,
-        `${model.latency}ms`,
-        model.fitScore
-      ]);
-      
-      (doc as any).autoTable({
-        head: [['Model', 'Provider', 'Cost/1K', 'Latency', 'Fit Score']],
-        body: modelData,
-        startY: yPosition,
-        theme: 'striped',
-        headStyles: { fillColor: [15, 98, 254] }
-      });
-      
-      yPosition = (doc as any).lastAutoTable.finalY + 20;
-      
-      // Cost Breakdown
-      doc.setFontSize(16);
-      doc.text('Cost Breakdown', 20, yPosition);
-      yPosition += 10;
-      
-      const costData = analysis.costBreakdown.map(item => [
-        item.component,
-        `$${item.cost.toLocaleString()}`,
-        `${item.percentage}%`
-      ]);
-      
-      (doc as any).autoTable({
-        head: [['Component', 'Cost', 'Percentage']],
-        body: costData,
-        startY: yPosition,
-        theme: 'striped',
-        headStyles: { fillColor: [15, 98, 254] }
-      });
-      
-      // Save the PDF
-      doc.save(`ai-cost-optimization-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      try {
+        // Dynamic import of jsPDF
+        const jsPDF = (await import('jspdf')).default;
+        await import('jspdf-autotable');
+        
+        const doc = new jsPDF();
+        
+        // Header
+        doc.setFontSize(20);
+        doc.setTextColor(15, 98, 254);
+        doc.text('AI Cost Optimization Report', 20, 30);
+        
+        doc.setFontSize(12);
+        doc.setTextColor(0, 0, 0);
+        doc.text(`Generated: ${new Date().toLocaleDateString()}`, 20, 45);
+        
+        // Use Case Description
+        doc.setFontSize(16);
+        doc.text('Use Case Overview', 20, 65);
+        doc.setFontSize(11);
+        const splitDescription = doc.splitTextToSize(formData.userDescription, 170);
+        doc.text(splitDescription, 20, 75);
+        
+        let yPosition = 75 + (splitDescription.length * 6) + 15;
+        
+        // Cost Summary
+        doc.setFontSize(16);
+        doc.text('Cost Analysis Summary', 20, yPosition);
+        yPosition += 15;
+        
+        doc.setFontSize(11);
+        doc.text(`Total Monthly Cost: $${analysis.totalMonthlyCost.toLocaleString()}`, 20, yPosition);
+        doc.text(`Cost per Request: $${analysis.costPerRequest}`, 20, yPosition + 10);
+        doc.text(`Efficiency Score: ${analysis.efficiency}%`, 20, yPosition + 20);
+        
+        yPosition += 40;
+        
+        // Model Recommendations
+        doc.setFontSize(16);
+        doc.text('Recommended Models', 20, yPosition);
+        yPosition += 10;
+        
+        const modelData = analysis.models.map((model: any) => [
+          model.name,
+          model.provider,
+          `$${model.costPer1K}`,
+          `${model.latency}ms`,
+          model.fitScore
+        ]);
+        
+        (doc as any).autoTable({
+          head: [['Model', 'Provider', 'Cost/1K', 'Latency', 'Fit Score']],
+          body: modelData,
+          startY: yPosition,
+          theme: 'striped',
+          headStyles: { fillColor: [15, 98, 254] }
+        });
+        
+        yPosition = (doc as any).lastAutoTable.finalY + 20;
+        
+        // Cost Breakdown
+        doc.setFontSize(16);
+        doc.text('Cost Breakdown', 20, yPosition);
+        yPosition += 10;
+        
+        const costData = analysis.costBreakdown.map((item: any) => [
+          item.component,
+          `$${item.cost.toLocaleString()}`,
+          `${item.percentage}%`
+        ]);
+        
+        (doc as any).autoTable({
+          head: [['Component', 'Cost', 'Percentage']],
+          body: costData,
+          startY: yPosition,
+          theme: 'striped',
+          headStyles: { fillColor: [15, 98, 254] }
+        });
+        
+        // Save the PDF
+        doc.save(`ai-cost-optimization-report-${new Date().toISOString().split('T')[0]}.pdf`);
+      } catch (error) {
+        console.error('PDF generation failed:', error);
+        alert('PDF generation failed. Please try again.');
+      }
     }
   };
 
