@@ -15,10 +15,13 @@ export function useOptimization() {
     },
     onSuccess: (result) => {
       setAnalysis(result);
-      toast({
-        title: "Analysis Complete",
-        description: "Your AI cost optimization analysis is ready.",
-      });
+      // Small delay to ensure loading animation completes
+      setTimeout(() => {
+        toast({
+          title: "Analysis Complete",
+          description: "Your AI cost optimization analysis is ready.",
+        });
+      }, 500);
     },
     onError: (error) => {
       console.error("Analysis failed:", error);
