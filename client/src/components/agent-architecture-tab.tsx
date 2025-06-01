@@ -57,63 +57,117 @@ export default function AgentArchitectureTab({ analysis }: AgentArchitectureTabP
         </p>
       </div>
 
-      {/* Modern Architecture Diagram */}
-      <div className="relative bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-8 min-h-[500px] border border-slate-200">
+      {/* Agent Importance Ranking */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {analysis.agents.slice(0, 3).map((agent, index) => (
+          <div key={agent.id} className="relative">
+            <div className={`
+              bg-white rounded-xl p-6 shadow-lg border-2 transition-all duration-300 hover:shadow-xl
+              ${index === 0 ? 'border-yellow-400 bg-gradient-to-br from-yellow-50 to-orange-50' :
+                index === 1 ? 'border-gray-400 bg-gradient-to-br from-gray-50 to-slate-50' :
+                'border-amber-600 bg-gradient-to-br from-amber-50 to-yellow-50'}
+            `}>
+              {/* Importance Badge */}
+              <div className="absolute -top-3 -right-3">
+                <div className={`
+                  w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm
+                  ${index === 0 ? 'bg-yellow-500' :
+                    index === 1 ? 'bg-gray-500' :
+                    'bg-amber-600'}
+                `}>
+                  {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-4 mb-4">
+                <div className={`
+                  p-4 rounded-xl
+                  ${index === 0 ? 'bg-yellow-100' :
+                    index === 1 ? 'bg-gray-100' :
+                    'bg-amber-100'}
+                `}>
+                  <div className={`
+                    text-2xl
+                    ${index === 0 ? 'text-yellow-600' :
+                      index === 1 ? 'text-gray-600' :
+                      'text-amber-600'}
+                  `}>
+                    {getAgentIcon(agent.id)}
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">{agent.name}</h3>
+                  <p className="text-sm text-slate-600">{agent.description}</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center">
+                <div className="text-sm">
+                  <span className="font-medium text-slate-700">Cost: </span>
+                  <span className="text-blue-600 font-semibold">${agent.cost.toFixed(4)}/req</span>
+                </div>
+                <div className={`
+                  px-3 py-1 rounded-full text-xs font-medium
+                  ${agent.status === 'success' ? 'bg-green-100 text-green-800' :
+                    agent.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-blue-100 text-blue-800'}
+                `}>
+                  {agent.status}
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Agent Flow Diagram */}
+      <div className="relative bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-8 min-h-[400px] border border-slate-200">
         {/* Flow Direction Indicator */}
         <div className="absolute top-4 left-4 flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2 border border-slate-200">
           <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
           <span className="text-sm font-medium text-slate-700">Data Flow</span>
         </div>
 
-        {/* Central Workflow */}
+        {/* Agent Flow */}
         <div className="flex justify-center items-center h-full">
-          <div className="flex items-center space-x-8">
-            {analysis.agents.slice(0, 3).map((agent, index) => (
+          <div className="flex items-center space-x-6">
+            {analysis.agents.map((agent, index) => (
               <div key={agent.id} className="flex items-center">
                 {/* Agent Node */}
                 <div className="relative group">
                   <div className={`
-                    w-32 h-32 rounded-2xl shadow-xl bg-white border-2 transition-all duration-300 
-                    hover:scale-110 hover:shadow-2xl cursor-pointer
+                    w-24 h-24 rounded-xl shadow-lg bg-white border-2 transition-all duration-300 
+                    hover:scale-110 hover:shadow-xl cursor-pointer
                     ${agent.status === 'success' ? 'border-green-400' : 
                       agent.status === 'warning' ? 'border-yellow-400' : 
                       'border-blue-400'}
                   `}>
-                    <div className="flex flex-col items-center justify-center h-full p-4">
+                    <div className="flex flex-col items-center justify-center h-full p-2">
                       <div className={`
-                        p-3 rounded-xl mb-2
-                        ${agent.status === 'success' ? 'bg-green-100' : 
-                          agent.status === 'warning' ? 'bg-yellow-100' : 
-                          'bg-blue-100'}
+                        p-2 rounded-lg mb-1
+                        ${agent.status === 'success' ? 'bg-green-100 text-green-600' : 
+                          agent.status === 'warning' ? 'bg-yellow-100 text-yellow-600' : 
+                          'bg-blue-100 text-blue-600'}
                       `}>
-                        <div className={`
-                          ${agent.status === 'success' ? 'text-green-600' : 
-                            agent.status === 'warning' ? 'text-yellow-600' : 
-                            'text-blue-600'}
-                        `}>
-                          {getAgentIcon(agent.id)}
-                        </div>
+                        {getAgentIcon(agent.id)}
                       </div>
-                      <h4 className="text-sm font-bold text-slate-800 text-center leading-tight">
-                        {agent.name}
-                      </h4>
-                      <p className="text-xs text-slate-500 text-center mt-1">
-                        ${agent.cost.toFixed(3)}/req
-                      </p>
+                      <span className="text-xs font-semibold text-slate-800 text-center leading-tight">
+                        {agent.name.split(' ')[0]}
+                      </span>
                     </div>
                   </div>
                   
                   {/* Tooltip */}
-                  <div className="absolute -top-16 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs rounded-lg px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
+                  <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white text-xs rounded-lg px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10">
                     {agent.description}
                   </div>
                 </div>
 
                 {/* Arrow */}
-                {index < analysis.agents.slice(0, 3).length - 1 && (
-                  <div className="flex items-center mx-4">
-                    <div className="w-8 h-0.5 bg-gradient-to-r from-blue-400 to-blue-600 relative">
-                      <div className="absolute -right-1 -top-1 w-0 h-0 border-l-4 border-l-blue-600 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
+                {index < analysis.agents.length - 1 && (
+                  <div className="flex items-center mx-2">
+                    <div className="w-6 h-0.5 bg-gradient-to-r from-blue-400 to-blue-600 relative">
+                      <div className="absolute -right-1 -top-1 w-0 h-0 border-l-3 border-l-blue-600 border-t-2 border-t-transparent border-b-2 border-b-transparent"></div>
                     </div>
                   </div>
                 )}
@@ -121,24 +175,6 @@ export default function AgentArchitectureTab({ analysis }: AgentArchitectureTabP
             ))}
           </div>
         </div>
-
-        {/* Additional Agents */}
-        {analysis.agents.length > 3 && (
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-            <div className="flex space-x-4">
-              {analysis.agents.slice(3).map((agent) => (
-                <div key={agent.id} className="w-20 h-20 rounded-xl bg-white shadow-lg border border-slate-200 flex flex-col items-center justify-center p-2 hover:scale-105 transition-transform">
-                  <div className="text-blue-500 mb-1">
-                    {getAgentIcon(agent.id)}
-                  </div>
-                  <span className="text-xs font-medium text-slate-700 text-center">
-                    {agent.name.split(' ')[0]}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* Performance Dashboard */}
         <div className="absolute top-6 right-6 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-lg border border-slate-200 min-w-[200px]">
